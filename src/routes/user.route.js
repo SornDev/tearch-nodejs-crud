@@ -17,6 +17,9 @@ router.get('/:id', auth, UserController.getUserById)
 // post add user
 router.post('/', auth, UserController.createUser)
 
+// post add register
+router.post('/register', UserController.createUser)
+
 // put update user by id
 router.put('/:id', auth, UserController.updateUser)
 

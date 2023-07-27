@@ -18,7 +18,7 @@ class User {
 }
 
 User.login = (user, result) => {
-    // console.log(user);
+    console.log(process.env.TOKEN_SECRET.toString('utf-8'));
     dbConn.query('SELECT * FROM users WHERE email = ?', user.email, (err, res) => {
         if (err) return result(err, null)
         if (res.length > 0) {
@@ -77,7 +77,7 @@ User.logout = (req, result) => {
 
 User.check_auth = (req, result) => {
     const token = req.headers.authorization.split(' ')[1];
-    jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
+    jwt.verify(token, process.env.TOKEN_SECRET.toString('utf-8'), (err, decoded) => {
         if (err) return result(err, null)
         return result(null, decoded)
 
