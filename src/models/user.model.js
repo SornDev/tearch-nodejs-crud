@@ -1,6 +1,5 @@
 const dbConn = require('../configs/db.config');
 const bcrypt = require('bcryptjs');
-const e = require('express');
 const jwt = require('jsonwebtoken');
 
 // .env
@@ -18,23 +17,34 @@ class User {
 }
 
 User.login = (user, result) => {
-    console.log(process.env.TOKEN_SECRET.toString('utf-8'));
+    // console.log(process.env.TOKEN_SECRET.toString('utf-8'));
     dbConn.query('SELECT * FROM users WHERE email = ?', user.email, (err, res) => {
         if (err) return result(err, null)
         if (res.length > 0) {
+            console.log(user.password, res[0].password);
             bcrypt.compare(user.password, res[0].password, (err, isMatch) => {
                 if (err) return result(err, null)
                 if (isMatch) {
                     const token = jwt.sign({ id: res[0].id }, process.env.TOKEN_SECRET, { expiresIn: '1h' })
                     return result(null, token)
                 } else {
-                    return result({ message: 'Password incorrect' }, null)
+                    return result({ message: 'Password incorrect' + res[0].id }, null)
                 }
             })
         } else {
             return result({ message: 'Email not found' }, null)
         }
     });
+
+    // bcrypt compare password
+    // bcrypt.compare(user.password, hash, (err, isMatch) => {
+    //     if (err) return result(err, null)
+    //     if (isMatch) {
+    //         const token = jwt.sign({ id: res[0].id }, process.env.TOKEN_SECRET, { expiresIn: '1h' })
+    //         return result(null, token)
+    //     } else {
+    //         return result({ message: 'Password incorrect' }, null)
+    //     }
 
 
     checkTokenbacklist()
@@ -92,10 +102,20 @@ User.create = (newUser, result) => {
         // console.log('create table users success')
     });
 
-    dbConn.query('INSERT INTO users SET ?', newUser, (err, res) => {
-        if (err) return result(err, null)
-        return result(null, res.insertId)
-    });
+    if(!newUser.password) return result({message: 'Password is required'}, null)
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(newUser.password, salt, (err, hash) => {
+            newUser.password = hash
+
+            dbConn.query('INSERT INTO users SET ?', newUser, (err, res) => {
+                if (err) return result(err, null)
+                return result(null, res.insertId)
+            });
+            
+        })
+    })
+
+   
 }
 
 User.findById = (id, result) => {
@@ -113,10 +133,23 @@ User.findAll = (result) => {
 }
 
 User.update = (id, user, result) => {
-    dbConn.query('UPDATE users SET username=?, password=?, email=? WHERE id=?', [user.username, user.password, user.email, id], (err, res) => {
-        if (err) return result(err, null)
-        return result(null, res)
-    });
+    if(user.password){
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(user.password, salt, (err, hash) => {
+                if (err) return result(err, null)
+                user.password = hash;
+                dbConn.query('UPDATE users SET username=?, password=?, email=? WHERE id=?', [user.username, user.password, user.email, id], (err, res) => {
+                    if (err) return result(err, null)
+                    return result(null, res)
+                });
+            })
+        })
+    } else {
+        dbConn.query('UPDATE users SET username=?, email=? WHERE id=?', [user.username, user.email, id], (err, res) => {
+            if (err) return result(err, null)
+            return result(null, res)
+        });
+    }
 }
 
 User.delete = (id, result) => {

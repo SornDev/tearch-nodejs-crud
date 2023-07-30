@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 exports.login = (req, res) => {
     // console.log(req.body);
     User.login(req.body, (err, token) => {
-
         if (err) return res.status(200).json({ sussess: false, message: err.message })
         if (token) return res.status(200).json({ sussess: true, token })
     })
@@ -52,16 +51,9 @@ exports.createUser = (req, res) => {
     if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
         return res.status(400).json({ sussess: false, message: 'Please fill all field' })
     } else {
-        bcrypt.genSalt(10, (err, salt) => {
+        User.create(newUser, (err, user) => {
             if (err) return res.status(500).json({ sussess: false, message: err.message })
-            bcrypt.hash(newUser.password, salt, (err, hash) => {
-                if (err) return res.status(500).json({ sussess: false, message: err.message })
-                newUser.password = hash
-                User.create(newUser, (err, user) => {
-                    if (err) return res.status(500).json({ sussess: false, message: err.message })
-                    res.json({ sussess: true, message: 'User created' })
-                })
-            })
+            res.json({ sussess: true, message: 'User created' })
         })
     }
 }
@@ -86,10 +78,10 @@ exports.updateUser = (req, res) => {
     if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
         return res.status(400).json({ sussess: false, message: 'Please fill all field' })
     } else {
-        User.update(req.params.id, updateUser, (err, user) => {
-            if (err) return res.status(500).json({ sussess: false, message: err.message })
-            res.json({ sussess: true, message: 'User updated' })
-        })
+            User.update(req.params.id, updateUser, (err, user) => {
+                if (err) return res.status(500).json({ sussess: false, message: err.message })
+                res.json({ sussess: true, message: 'User updated' })
+            })
     }
 }
 
